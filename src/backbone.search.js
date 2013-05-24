@@ -9,31 +9,61 @@
 
 (function(Backbone, _, $, undefined) {
 
+  Backbone.Model.prototype.clearSearchScore = function(event) {
+    this.off(null, Backbone.Model.prototype.clearSearchScore, this);
+    this.unset('searchScore');
+    this.unset('searchTerm');
+  };
+
+  Backbone.Model.prototype.getSearchScore = function(term) {
+    if (this.has('searchScore') && this.has('searchTerm') && this.get('searchTerm') === term) {
+      return this.get('searchScore');
+    }
+
+    var searchObject = this.searchFields ? this.pick(this.searchFields) : this.toJSON();
+    var searchString = JSON.stringify(_.values(searchObject)).toLowerCase();
+    var searchScore = searchString.score(term);
+
+    this.set({
+      searchScore: searchScore,
+      searchTerm: term
+    });
+
+    // Setup listeners for any changes that could invalidate the score
+    if (this.searchFields) {
+      for (var i = 0; i < this.searchFields.length; i++) {
+        this.on('change:' + this.searchFields[i], Backbone.Model.prototype.clearSearchScore, this);
+      }
+    }
+    else {
+      this.on('change', Backbone.Model.prototype.clearSearchScore, this);
+    }
+
+    return searchScore;
+  };
+
   // Based on John Resig's jQuery LiveSearch: http://ejohn.org/blog/jquery-livesearch
-  Backbone.Collection.prototype.search = function ( term ) {
+  Backbone.Collection.prototype.search = function( term ) {
 
     term = $.trim( term.toLowerCase() );
 
-    var scores =  new Backbone.Collection();
+    var scores = new Backbone.Collection();
 
     scores.comparator = function( model ) {
-      return -1 * model.get( "searchscore" );
+      return -1*model.getSearchScore( term );
     };
 
     if( term ) {
       this.each( function( model ){
-        var score = JSON.stringify( _.values(model.toJSON()) ).toLowerCase().score( term );
-
-        if ( score > 0 ) {
-          model.set( "searchscore", score );
-          scores.add( model );
+        if ( model.getSearchScore(term) > 0 ) {
+          scores.add(model, {sort: false});
         }
       });
-
     }
 
-    return scores;
+    scores.sort();
 
+    return scores;
   };
 
 

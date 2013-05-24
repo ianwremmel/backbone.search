@@ -15,13 +15,16 @@
     equal(typeof this.coll.search, "function");
   });
 
-  test("Returns correct matches", 3, function() {
+  test("Returns correct matches", 5, function() {
 
     var results = this.coll.search("co");
 
-    equal(results.length, 3);
-    ok(results.get(this.coll.at(0)));
-    ok(results.get(this.coll.at(2)));
+    equal(results.length, 3, 'There are 3 matches');
+
+    ok(results.get(this.coll.at(0)), '"Welcome Isaac Durazo" matches');
+    ok(!results.get(this.coll.at(1)), '"Ringmark Tests Open Source" does not match');
+    ok(results.get(this.coll.at(2)), '"Bocoup Gamelab" matches');
+    ok(results.get(this.coll.at(3)), '"Strange wELCOMe" matches');
 
   });
 
