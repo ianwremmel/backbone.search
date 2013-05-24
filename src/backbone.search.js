@@ -16,7 +16,7 @@
   };
 
   Backbone.Model.prototype.getSearchScore = function(term) {
-    if (this.has('searchScore') && this.has('searchTerm') && this.get('searchTerm') === term) {
+    if (this.has('searchScore') && (!term || (this.has('searchTerm') && this.get('searchTerm') === term))) {
       return this.get('searchScore');
     }
 
